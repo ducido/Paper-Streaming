@@ -38,6 +38,7 @@ class DominantColor(object):
         #reshape the image to be a list of pixels
         image = cv2.resize(image, (128, 128))
         image = image.reshape((image.shape[0] * image.shape[1], 3))
+        # print(image.shape)
 
         #cluster and assign labels to the pixels 
         clt = KMeans(n_clusters = k)
@@ -81,6 +82,8 @@ class HandRemover(object):
         hand_mask = self.__get_hand_mask(image)
         
         background_area = np.where(hand_mask==0)
+        # cv2.imshow('bg', background_area)
+        # cv2.waitKey(0)
         self.background[background_area] = image[background_area]
 
         self.background = self.__flood_fill(self.background.copy())
@@ -134,17 +137,30 @@ class HandRemover(object):
 
         mask_YCbCr = cv2.inRange(YCbCr_image, self.lower_YCbCr_values, self.upper_YCbCr_values)
         mask_HSV = cv2.inRange(HSV_image, self.lower_HSV_values, self.upper_HSV_values)
-
+        # cv2.imshow('1', mask_YCbCr)
+        # cv2.imshow('2', mask_HSV)
+        # cv2.waitKey(0)
         foreground_mask = cv2.add(mask_HSV, mask_YCbCr)
+        # cv2.imshow('3',foreground_mask)
+        # cv2.waitKey(0)
 
         # Morphological operations
         background_mask = ~foreground_mask
+        # cv2.imshow('4',background_mask)
+        # cv2.waitKey(0)
+
         background_mask = cv2.erode(background_mask, self.kernel, iterations=50)
         background_mask[background_mask==255] = 128
+        # cv2.imshow('4',background_mask)
+        # cv2.waitKey(0)
+
 
         marker = cv2.add(foreground_mask, background_mask)
+        # cv2.imshow('5',marker)
+        # cv2.waitKey(0)
         marker = np.int32(marker)
         cv2.watershed(image, marker)
+
 
         m = cv2.convertScaleAbs(marker)
         m[m != 255] = 0
@@ -153,5 +169,6 @@ class HandRemover(object):
         m = cv2.dilate(m, self.kernel, iterations=40)
 
         # cv2.imshow('m', m)
+        # cv2.waitKey(0)
         
         return m
