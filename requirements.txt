@@ -38,7 +38,7 @@ zc-lockfile==2.0
 # zlib==1.2.11 with conda
 numpy==1.21.4
 threadpoolctl==3.1.0
-PyQt5
+# PyQt5
 scikit-learn
 flask
 gunicorn
