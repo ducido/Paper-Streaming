@@ -10,8 +10,8 @@ class StrokeFilter:
         self.prev_connected_components = None
     
     def process(self, image):
-        # image = self._post_processing(image)
-        # image = self._get_stroke_mask(image)
+        image, mask = self._post_processing(image)
+        image = self._get_stroke_mask(mask)
         return image
     
     def _post_processing(self, bgr):
@@ -20,6 +20,7 @@ class StrokeFilter:
         lab = cv2.cvtColor(bgr, cv2.COLOR_BGR2LAB)
         lab_planes = cv2.split(lab)
         clahe = cv2.createCLAHE(clipLimit=2.0,tileGridSize=(gridsize,gridsize))
+        lab_planes = np.array(lab_planes)
         lab_planes[0] = clahe.apply(lab_planes[0])
         lab = cv2.merge(lab_planes)
         bgr = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR) 
@@ -32,7 +33,7 @@ class StrokeFilter:
         bgr[gray > 140] = [255, 255, 255]
         
         mask = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
-        mask[:,:] = 0
+        # mask[:,:] = 0
         mask[gray < 160] = 0
 
         bgr = cv2.morphologyEx(bgr, cv2.MORPH_CLOSE, np.ones((1, 1), dtype=np.uint8))
@@ -42,7 +43,11 @@ class StrokeFilter:
         # kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
         # mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
 
-        return bgr
+        # cv2.imshow('bgr', bgr)
+        # cv2.imshow('mask', mask)
+        # cv2.waitKey(1)
+
+        return bgr, mask
     
     
     def _get_label_mask(self, labels, ids):
@@ -87,9 +92,9 @@ class StrokeFilter:
             
             nb_components, labels, stats, centroids = cv2.connectedComponentsWithStats(mask, connectivity=8)
             
-        cv2.namedWindow("Debug1", cv2.WINDOW_NORMAL)
-        cv2.imshow("Debug1",  mask)
-        cv2.waitKey(1)
+        # cv2.namedWindow("Debug1", cv2.WINDOW_NORMAL)
+        # cv2.imshow("Debug1",  mask)
+        # cv2.waitKey(1)
 
             
         self.prev_mask = mask

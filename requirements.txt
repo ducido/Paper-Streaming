@@ -40,3 +40,7 @@ numpy==1.21.4
 threadpoolctl==3.1.0
 PyQt5
 scikit-learn
+flask
+gunicorn
+eventlet
+flask_socketio

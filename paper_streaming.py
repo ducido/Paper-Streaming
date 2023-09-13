@@ -5,6 +5,7 @@ import time
 import urllib
 from distutils import util
 from threading import Lock
+import threading
 
 import cv2
 import numpy as np
@@ -16,106 +17,77 @@ from libs.config import *
 from libs.hand_remover.hand_remover import HandRemover
 from libs.paper_processor.paper_processor import PaperProcessor
 from libs.stroke_filter.stroke_filter import StrokeFilter
-from libs.utils.common import *
-from libs.utils.ui_utils import *
-from libs.webcam import pyfakewebcam
+import filter
+# from libs.utils.common import *
+# from libs.utils.ui_utils import *
+# from libs.webcam import pyfakewebcam
 
-OUTPUT_SIMULATED_CAMERA = True
+OUTPUT_SIMULATED_CAMERA = False
 
-paper_processor = PaperProcessor(REFERENCE_ARUCO_IMAGE_PATH, aruco_remove_mask_path=REFERENCE_ARUCO_REMOVE_IMAGE_PATH, smooth=True, debug=False, output_video_path=None)
+paper_processor = PaperProcessor()
 hand_remover = HandRemover()
 stroke_filter = StrokeFilter()
 
 # create output video stream
-if OUTPUT_SIMULATED_CAMERA:
-    output_width, output_height = paper_processor.get_output_size()
-    camera = pyfakewebcam.FakeWebcam(get_camera_path("PaperStreamCam"), output_width, output_height)
+# if OUTPUT_SIMULATED_CAMERA:
+#     output_width, output_height = paper_processor.get_output_size()
+#     camera = pyfakewebcam.FakeWebcam(get_camera_path("PaperStreamCam"), output_width, output_height)
     
 frame = None
-frame_mutex = Lock()
     
 # camera reading thread
-new_camera_url = None
-def camera_reading_thread():
-    global frame, frame_mutex, new_camera_url
-    cap = cv2.VideoCapture(DEFAULT_WEBCAM_URL)
-    status_label = ""
-    while(True):
-        
-        if new_camera_url is not None:
-            print("Opening new camera at: {}".format(new_camera_url))
-            try:
-                cap.release()
-            except:
-                pass
-            cap = cv2.VideoCapture(new_camera_url)
-            new_camera_url = None
-        
-        frame_mutex.acquire()
-        ret, frame = cap.read()
-        frame_mutex.release()
+new_camera_url = "4.mp4"
+cap = cv2.VideoCapture(new_camera_url)
 
-        new_status_label = "Camera status: Disconnected"
-        if ret:
-            new_status_label = "Camera status: Connected"
-        if new_status_label != status_label:
-            status_label = new_status_label
-            window.cameraStatusLabel.setText(status_label)
-            
-            
-        time.sleep(0.05)
+def camera_reading_thread():
+    global frame, new_camera_url
+    index= 0
+    while True:
+        isframe, frame = cap.read()
+        if isframe is None:
+            break
+        cv2.imshow('frame', frame)
+        cv2.waitKey(35)
+    # frame = cv2.imread("test_data/0.png")
+
 
 # processing thread    
 def processing_thread():
-    global frame, frame_mutex
+    global frame
+    index = 0
     while(True):
         image = None
-        frame_mutex.acquire()
         try:
+            # print(frame)
             image = frame.copy()
+            image = cv2.transpose(image)
+            image = cv2.flip(image, 0)
+            draw = image.copy()
         except:
             pass
-        frame_mutex.release()
-        
         if image is None:
-            continue
-            
+            break
+
+
+        cv2.imshow('image', image)
+        cv2.waitKey(1)
         # get paper image
-        start_time = time.time()
-        is_cropped, processed_image = paper_processor.get_paper_image(image)
-        # print("Paper transform. time: {}".format(time.time() - start_time))
+        is_cropped, processed_image, draw = paper_processor.get_paper_image(image, draw= draw)
+        # cv2.imshow('crop', processed_image)
+        # cv2.waitKey(1)
         
         # remove hand
-        start_time = time.time()
         processed_image = hand_remover.process(processed_image, is_cropped=is_cropped)
-        # print("Hand removal time: {}".format(time.time() - start_time))
+        # cv2.imshow('remove hand', processed_image)
+        # cv2.waitKey(1)
         
         # post processing
-        start_time = time.time()
-        processed_image = stroke_filter.process(processed_image)
-        # print("Post processing time: {}".format(time.time() - start_time))
-            
-        if OUTPUT_SIMULATED_CAMERA:
-            if is_cropped:
-                camera_frame = cv2.cvtColor(processed_image, cv2.COLOR_BGR2RGB)
-                camera.schedule_frame(camera_frame)
+        processed_image = filter.thresh_image(processed_image)
+        cv2.imshow(' filter', processed_image)
+        cv2.waitKey(1)
         
-
-def connect_clicked():
-    global new_camera_url
-    new_camera_url = window.cameraUrlInput.toPlainText()
-
-
-# setup app
-app = QtWidgets.QApplication(sys.argv)
-window = uic.loadUi("libs/main_window.ui")
-window.setWindowTitle("PaperStream")
-window.newRoomBtn.clicked.connect(new_room_clicked)
-window.joinRoomBtn.clicked.connect(join_room_clicked)
-window.connectBtn.clicked.connect(connect_clicked)
-window.cameraUrlInput.setPlainText(DEFAULT_WEBCAM_URL)
-window.show()
-
-_thread.start_new_thread( camera_reading_thread, () )
-_thread.start_new_thread( processing_thread, () )
-app.exec()
+thread1 = threading.Thread(target=camera_reading_thread)
+thread1.start()
+time.sleep(1)
+thread2 = threading.Thread(target=processing_thread)
+thread2.start()

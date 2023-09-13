@@ -1,0 +1,45 @@
+
+Bạn đã gửi
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Processing</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+</head>
+<body>
+    <video id="video" width="540" height="480" autoplay></video>
+    <canvas id="canvas" width="540" height="480" style="display:none;"></canvas>
+    <img id="processed" width="540" height="480" src="" alt="Processed Video">
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const processed = document.getElementById('processed');
+        const socket = io.connect('http://' + document.domain + ':' + location.port);
+
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+                setInterval(captureAndSendFrame, 100);  // Adjust interval as needed
+            });
+        
+        var startTime;
+
+        function captureAndSendFrame() {
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const frame = canvas.toDataURL('image/jpeg');
+            socket.emit('video_frame', frame);
+            startTime = new Date();
+        }
+
+        socket.on('processed_frame', data => {
+            let endTime = new Date();
+            console.log(endTime - startTime + " ms")
+            processed.src = 'data:image/jpeg;base64,' + data;
+        });
+    </script>
+</body>
+</html>

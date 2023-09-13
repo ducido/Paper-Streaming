@@ -2,103 +2,107 @@ import cv2
 import numpy as np
 import time
 from ..utils.common import *
+import threading
 
-class PaperProcessor:
 
-    def __init__(self, ref_image_path, aruco_remove_mask_path=None, smooth=False, debug=False, output_video_path=None):
+model = cv2.dnn.readNetFromONNX("UNET.050.onnx")
+
+class PaperProcessor():
+    points = []
+    pred = None
+    WIDTH = 128
+    HEIGHT = 128
+
+    def reorder(self, myPoints):
+        myPoints = myPoints.reshape((4,2))
+        myPointsNew = np.zeros((4,2),np.int32)
+        add = myPoints.sum(1)
+        #print("add", add)             
+        myPointsNew[0] = myPoints[np.argmin(add)]
+        myPointsNew[3] = myPoints[np.argmax(add)]
+        diff = np.diff(myPoints,axis=1)
+        myPointsNew[1]= myPoints[np.argmin(diff)]
+        myPointsNew[2] = myPoints[np.argmax(diff)]
+        #print("NewPoints",myPointsNew)
+
+        array_axis0 = myPointsNew[:, 0] * (self.frame.shape[1]/128)  # Multiply only the first column
+
+        # Multiply along axis 1 with 'b'
+        array_axis1 = myPointsNew[:, 1] * (self.frame.shape[0]/128)  # Multiply only the second column
+
+        # Create the output array
+        myPointsNew = np.column_stack((array_axis0, array_axis1))
         
-        self.smooth = smooth
-        self.debug = debug
-        self.output_video_path = output_video_path
-        
-        # transform matrices
-        self.last_M_update = time.time()
-        self.M = None
-        self.M_inv = None
-        self.h_array = []
+        return myPointsNew
 
-        # define an empty custom dictionary with 
-        aruco_dict = cv2.aruco.custom_dictionary(0, 4, 1)
-        # add empty bytesList array to fill with 3 markers later
-        aruco_dict.bytesList = np.empty(shape = (4, 2, 4), dtype = np.uint8)
-        # add new marker(s)
-        mybits = np.array([[1,0,1,1],[0,1,0,1],[0,0,1,1],[0,0,1,0]], dtype = np.uint8)
-        aruco_dict.bytesList[0] = cv2.aruco.Dictionary_getByteListFromBits(mybits)
-        mybits = np.array([[0,0,0,0],[1,1,1,1],[1,0,0,1],[1,0,1,0]], dtype = np.uint8)
-        aruco_dict.bytesList[1] = cv2.aruco.Dictionary_getByteListFromBits(mybits)
-        mybits = np.array([[1,0,0,1],[1,0,0,1],[0,1,0,0],[0,1,1,0]], dtype = np.uint8)
-        aruco_dict.bytesList[2] = cv2.aruco.Dictionary_getByteListFromBits(mybits)
-        mybits = np.array([[0,0,1,1],[0,0,1,1],[0,0,1,0],[1,1,0,1]], dtype = np.uint8)
-        aruco_dict.bytesList[3] = cv2.aruco.Dictionary_getByteListFromBits(mybits)
-        self.aruco_dict = aruco_dict
 
-        # adjust dictionary parameters for better marker detection
-        parameters =  cv2.aruco.DetectorParameters_create()
-        parameters.cornerRefinementMethod = 5
-        parameters.errorCorrectionRate = 0.3
-        self.parameters = parameters
+    def getContours(self, img, draw):
+        img = img.astype('uint8')
+        contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
+        max_area = 0
+        biggest = None
+        for cnt in contours:
+            area = cv2.contourArea(cnt)
+            if area > 5000:
+                peri = cv2.arcLength(cnt, True)
+                approx = cv2.approxPolyDP(cnt, 0.02*peri, True)                   
+                if area > max_area and len(approx) in [4]:
+                    max_area = area
+                    biggest = approx
+                    self.points.append(biggest)
 
-        # load reference image
-        self.ref_image = cv2.imread(ref_image_path, cv2.IMREAD_GRAYSCALE)
+        if self.points:
+            biggest = self.reorder(self.points[-1])
+            biggest = np.round(biggest).astype('int').reshape(4,1,2)
 
-        # detect markers in reference image
-        self.ref_corners, self.ref_ids, self.ref_rejected = cv2.aruco.detectMarkers(self.ref_image, aruco_dict, parameters = parameters)
+        cv2.drawContours(draw, biggest, -1, (255,0,0), 10)
+        # cv2.circle(draw, biggest[0][0], 10, (255,0,0), -1)  
+        # cv2.circle(draw, biggest[0][1], 10, (255,0,0), -1)  
+        # cv2.circle(draw, biggest[2][0], 10, (255,0,0), -1)  
+        # cv2.circle(draw, biggest[3][0], 10, (255,0,0), -1)  
+   
+        return biggest
 
-        # create bounding box from reference image dimensions
-        self.rect = np.array([[[0,0],
-                        [self.ref_image.shape[1],0],
-                        [self.ref_image.shape[1], self.ref_image.shape[0]],
-                        [0,self.ref_image.shape[0]]]], dtype = "float32")
-        
-        if self.output_video_path:
-            self.output_video = cv2.VideoWriter('output.avi', cv2.VideoWriter_fourcc('M','J','P','G'), 10, (self.ref_image.shape[1], self.ref_image.shape[0]))
-        else:
-            self.output_video = None
-            
-        if aruco_remove_mask_path:
-            self.aruco_remove_mask = cv2.imread(aruco_remove_mask_path, cv2.IMREAD_GRAYSCALE)
-        else:
-            self.aruco_remove_mask = None
-        
-    def get_output_size(self):
-        return self.ref_image.shape[1], self.ref_image.shape[0]
+    def get_warp(self, img, biggest):
+        biggest = biggest.reshape(4,2)
+        pts1 = np.float32(biggest)
+        pts2 = np.float32([[0,0], [img.shape[1],0], [0, img.shape[0]], [img.shape[1], img.shape[0]]])
+        # print(pts1)
+        matrix = cv2.getPerspectiveTransform(pts1, pts2)
+        imgOutput = cv2.warpPerspective(img, matrix, (img.shape[1], img.shape[0]))
+        # imgOutput = imgOutput[150:imgOutput.shape[0],25:imgOutput.shape[1]-45]
+        # imgOutput = cv2.resize(imgOutput,(img.shape[1], img.shape[0]))
+        return imgOutput
+    
+    def detect_paper(self):
+        frame = cv2.resize(self.frame, (self.WIDTH, self.HEIGHT)) / 127.5 - 1
+        model.setInput(frame.reshape(1, self.HEIGHT, self.WIDTH, 3))
+        self.pred = model.forward()
+        self.pred = self.pred[:,:,:,1:2].reshape(self.HEIGHT, self.WIDTH, 1)
 
-    def get_paper_image(self, image):
+        self.pred[self.pred >= 0.05] = 1
+        self.pred[self.pred < 0.05] = 0
+
+
+    def get_paper_image(self, frame, draw):
         """Transform image"""
+        self.frame = frame
+        thread_detect_paper = threading.Thread(target= self.detect_paper)
+        thread_detect_paper.start()
 
-        # convert frame to gray scale
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        # try:
+        #     cv2.imshow("pred", self.pred)
+        #     cv2.waitKey(1)
+        # except: pass
 
-        # find new transform matrices
-        is_aruco_detected = True
-        if time.time() - self.last_M_update > 2 or self.M is None:
-            is_aruco_detected = self._update_transform_matrices(gray)
-            self.last_M_update = time.time()
+        img_warp = frame
+        if self.pred is not None:
+            biggest = self.getContours(self.pred, draw)
+            if biggest is not None:
+                img_warp = self.get_warp(frame, biggest)
+                return True, img_warp, draw
 
-        # draw detected markers in frame with their ids
-        if self.debug and is_aruco_detected:
-            draw_frame = image.copy()
-            cv2.aruco.drawDetectedMarkers(draw_frame, self.res_corners, self.res_ids)
-            cv2.namedWindow("Debug aruco", cv2.WINDOW_NORMAL)
-            cv2.imshow("Debug aruco",  draw_frame)
-            cv2.waitKey(1)
-        
-        # convert image using new transform matrices
-        if is_aruco_detected:
-            frame_warp = cv2.warpPerspective(image, self.M_inv, (self.ref_image.shape[1], self.ref_image.shape[0]))
-            frame_warp = self._remove_aruco(frame_warp)
-            if self.output_video is not None:
-                self.output_video.write(frame_warp)
-            return True, frame_warp
-        elif self.M_inv is not None:
-            frame_warp = cv2.warpPerspective(image, self.M_inv, (self.ref_image.shape[1], self.ref_image.shape[0]))
-            frame_warp = self._remove_aruco(frame_warp)
-            if self.output_video is not None:
-                self.output_video.write(frame_warp)
-            return True, frame_warp
-        else:
-            return False, image
-        
+        return False, frame, draw
         
     def _remove_aruco(self, image):
         
