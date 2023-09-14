@@ -23,7 +23,7 @@ import time
 
 Payload.max_decode_packets = 50
 app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, async_mode='gevent')
 
 # Initialization
 paper_processor = PaperProcessor()
@@ -48,9 +48,7 @@ def handle_frame(data):
     draw = image.copy()
     # processed_image = image.copy()
     is_cropped, processed_image, draw = paper_processor.get_paper_image(image, draw=draw)
-    # processed_image = cv2.cvtColor(processed_image, cv2.COLOR_BGR2GRAY)
-    # processed_image = cv2.equalizeHist(processed_image)
-    # processed_image = cv2.cvtColor(processed_image, cv2.COLOR_BGR2RGB)
+    processed_image = cv2.cvtColor(processed_image, cv2.COLOR_BGR2GRAY)
     processed_image = hand_remover.process(processed_image, is_cropped=is_cropped)
 
 
@@ -59,7 +57,7 @@ def handle_frame(data):
     # processed_image = np.array(enhancer.enhance(factor))
 
 
-    processed_image = filter.remove_shadow(processed_image)
+    # processed_image = filter.remove_shadow(processed_image)
 
 
 
@@ -79,4 +77,3 @@ def handle_frame(data):
 if __name__ == '__main__':
     socketio.run(app, debug=True)
 
-'''/home/saplab/Documents/paper_stream/test_data'''

@@ -20,6 +20,13 @@ Bạn đã gửi
         const processed = document.getElementById('processed');
         const socket = io.connect('http://' + document.domain + ':' + location.port);
 
+        // navigator.mediaDevices.getUserMedia({ video: true })
+        //     .then(stream => {
+        //         video: {
+        //             facingMode: 'user'  // This specifies the front camera
+        //         };
+        //         setInterval(captureAndSendFrame, 100);  // Adjust interval as needed
+        //     });
         navigator.mediaDevices.getUserMedia({ video: true })
             .then(stream => {
                 video.srcObject = stream;
