@@ -14,4 +14,11 @@ pip install -U pip setuptools
 ```
 python app.py
 ```
+# Note
+```
+ứng dụng chạy trên localhost tại port 5000 (localhost:5000)
+```
+# Video demo sản phẩm
+
+https://github.com/ducido/paper_stream/assets/122734511/087f89d4-696f-45a9-8c22-21976c3cb5ad
 
