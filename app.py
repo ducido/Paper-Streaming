@@ -13,12 +13,32 @@ import base64
 from engineio.payload import Payload
 from PIL import Image, ImageEnhance
 # from gevent import monkey
-
+import onnxruntime
 # Delete later
 import time
 #==============================
+size= 128
+class paper_segment:
+    def __init__(self):
+        self.model = onnxruntime.InferenceSession("pretrained/UNET.050.onnx",providers=['CUDAExecutionProvider'])
+        self.input_name = self.model.get_inputs()[0].name
+        print(self.model.get_inputs()[0])
 
+    def preprocess(self, image):
+        image = image[:,:,::-1]
+        image = cv2.resize(image, (size, size)).reshape(1,size,size,3)
+        return image.astype('float32')/255
+    
+    def predict(self, image):
+        image = self.preprocess(image)
+        result = self.model.run(None, {self.input_name: image})
+        pred = result[0].reshape(size, size, 2)[:,:,1:2]
+        # pred = result[0].reshape(size, size)
 
+        # pred[pred < 0.05] == 0
+        pred[pred >= 0.0] == 1
+        return pred
+model = paper_segment()
 # monkey.patch_all()
 
 Payload.max_decode_packets = 50
@@ -44,11 +64,14 @@ def handle_frame(data):
     # Process the frame
     image = frame.copy()
     # image = cv2.transpose(image)
-    # image = cv2.flip(image, 0)
+    image = cv2.flip(image, 0)
+    image = cv2.flip(image, 1)
     draw = image.copy()
     # processed_image = image.copy()
-    is_cropped, processed_image, draw = paper_processor.get_paper_image(image, draw=draw)
-    processed_image = cv2.cvtColor(processed_image, cv2.COLOR_BGR2GRAY)
+    pred = model.predict(image)
+    # cv2.imshow('pred', pred)
+    # cv2.waitKey(1)
+    is_cropped, processed_image, draw = paper_processor.get_paper_image(image, pred, draw=draw)
     processed_image = hand_remover.process(processed_image, is_cropped=is_cropped)
 
 
@@ -57,7 +80,8 @@ def handle_frame(data):
     # processed_image = np.array(enhancer.enhance(factor))
 
 
-    # processed_image = filter.remove_shadow(processed_image)
+    processed_image = filter.remove_shadow(processed_image)
+
 
 
 
@@ -67,7 +91,7 @@ def handle_frame(data):
 
 
     # Convert the processed image to base64 and send it back to the client
-    ret, jpeg = cv2.imencode('.jpg', image)
+    ret, jpeg = cv2.imencode('.jpg', processed_image)
     processed_encoded = base64.b64encode(jpeg.tobytes()).decode('utf-8')
     socketio.emit('processed_frame', processed_encoded)
     end = time.time()

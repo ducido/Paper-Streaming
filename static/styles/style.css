@@ -1,0 +1,40 @@
+[v-cloak] { display: none; }
+
+.header-highlight {
+  color: #ff4954;
+}
+
+.info {
+  padding: 1.5rem;
+}
+
+.container {
+  padding-top: 1rem;
+  justify-content: center;
+}
+
+#videos {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+#videos video {
+  flex: 1 1 50%;
+  padding: 0;
+  min-width: 0;
+}
+
+.button{
+    cursor: pointer;
+    justify-content: center;
+    padding-bottom: calc(0.5em - 1px);
+    padding-left: 1em;
+    padding-right: 1em;
+    padding-top: calc(0.5em - 1px);
+    text-align: center;
+    white-space: nowrap;
+    background-color: #00d1b2;
+    border-color: transparent;
+    color: #fff;
+}

@@ -81,86 +81,19 @@ class HandRemover(object):
         except:
             pass
 
+
         if hand_mask is not None:
             if np.sum(hand_mask) > 0:
-                self.check_hand = True
                 self.image_list.pop(-1)
-            else:
-                self.check_hand = False
-            
+
             background_area = np.where(hand_mask==0)
             hand_area = np.where(hand_dilate==255)
 
-            if len(self.image_list) > 5:
-                # print(1)
+            if len(self.image_list) > 10:
                 self.background[background_area] = image[background_area]
-                self.background[hand_area] = self.image_list[-5][hand_area]
+                self.background[hand_area] = self.image_list[-10][hand_area]
 
-        return self.background
-
-    def __remove_noise_border(self, image):
-        h, w = image.shape[:2]
-        color = (255, 255, 255) 
-        thickness = 2
-        image = cv2.rectangle(image, (0, 0), (w, h), color, thickness)
-
-        return image  
-
-
-    def __flood_fill(self, image, hand_mask):
-        image = self.__remove_noise_border(image)
-        test = cv2.Canny(image, 90, 90)
-        test = cv2.dilate(test, self.kernel, iterations=4)
-
-        # cv2.imshow('test', test)
-        # cv2.waitKey(1)
-        # Copy the thresholded image
-        im_floodfill = test.copy()
-
-        # Mask used to flood filling.
-        # Notice the size needs to be 2 pixels than the image.
-        h, w = test.shape[:2]
-        mask = np.zeros((h+2, w+2), np.uint8)
-
-        # Floodfill from point (0, 0)
-        # cv2.floodFill(im_floodfill, mask, (30, 20), 255)
-        # cv2.floodFill(im_floodfill, mask, (w-10,20), 255)
-        cv2.floodFill(im_floodfill, mask, (20,h - 20), 255)
-
-        # cv2.imshow("im_floodfill", im_floodfill)
-        # cv2.waitKey(1)
-
-        # Invert floodfilled image
-        im_floodfill_inv = cv2.bitwise_not(im_floodfill)
-        # cv2.imshow("im_floodfill_inv", im_floodfill_inv)
-        # cv2.waitKey(1)
-
-        # Combine the two images to get the foreground.
-        im_out = test | im_floodfill_inv
-
-    
-        image = cv2.bitwise_and(image, image, mask=im_out)
-
-
-        color = self.dominant_color.get_color()
-        if color is not None:
-            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            # cv2.imshow("gray", gray)
-            
-
-            # print(hand_mask.max())
-            hand_area = np.where(hand_mask == 1)
-            hand_mask[hand_area] = im_out[hand_area]//255
-            hand_mask = cv2.dilate(hand_mask, self.kernel, iterations=20)
-            # cv2.imshow("hand_mask", hand_mask*255)
-            # cv2.waitKey(1)
-
-            image[im_out == 0] = color
-            # image[gray == 255] = color
-            # image[hand_mask == 1] = color
-
-        # hi = self.process_imout(image)
-        return image
+        return self.background 
     
     def __get_hand_mask(self, image):
         HSV_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
@@ -170,7 +103,6 @@ class HandRemover(object):
         mask_HSV = cv2.inRange(HSV_image, self.lower_HSV_values, self.upper_HSV_values)
 
         foreground_mask = cv2.add(mask_HSV, mask_YCbCr)
-
         # Morphological operations
         background_mask = ~foreground_mask
         # background_mask = cv2.erode(background_mask, self.kernel, iterations=50)
@@ -183,14 +115,15 @@ class HandRemover(object):
         m = cv2.convertScaleAbs(foreground_mask)
         m[m < 200] = 0
         m[m >= 200] = 1
-        m_dilate = cv2.dilate(m*255, self.kernel, iterations=40)
+        m_dilate = cv2.dilate(m*255, self.kernel, iterations=20)
 
-        # print(np.sum(m))
-        if np.sum(m) < 10000:
+
+        # cv2.imshow('m', m*255)
+        # print('--------', np.sum(m))
+        if np.sum(m) < 30000:
             m = np.zeros_like(m)
 
         # self.fill_hand(m)
-        # cv2.imshow('m', m)
 
         # print(m_dilate.max())
         
