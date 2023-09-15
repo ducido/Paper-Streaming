@@ -25,7 +25,7 @@
         const canvas = document.getElementById('canvas');
         const context = canvas.getContext('2d');
         const processed = document.getElementById('processed');
-        const socket = io.connect('http://' + document.domain + ':' + location.port);
+        const socket = io.connect('https://' + document.domain + ':' + location.port);
 
         // navigator.mediaDevices.getUserMedia({ video: true })
         //     .then(stream => {
