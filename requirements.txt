@@ -45,3 +45,4 @@ gunicorn
 gevent
 flask_socketio
 gevent-websocket
+onnxruntime
