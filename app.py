@@ -8,7 +8,7 @@ import os, sys
 sys.path.append("/home/saplab/Documents/paper_stream/libs")
 from libs.hand_remover.hand_remover import HandRemover
 from libs.paper_processor.paper_processor import PaperProcessor
-from libs.stroke_filter.stroke_filter import StrokeFilter
+from filter import FilterImage
 import filter
 import base64
 from engineio.payload import Payload
@@ -18,10 +18,10 @@ import onnxruntime
 # Delete later
 import time
 #==============================
-size= 128
+size= 144
 class paper_segment:
     def __init__(self):
-        self.model = onnxruntime.InferenceSession("pretrained/UNET.050.onnx",providers=['CUDAExecutionProvider'])
+        self.model = onnxruntime.InferenceSession("pretrained/psp_0.98_only.onnx",providers=['CUDAExecutionProvider'])
         self.input_name = self.model.get_inputs()[0].name
         print(self.model.get_inputs()[0])
 
@@ -33,8 +33,8 @@ class paper_segment:
     def predict(self, image):
         image = self.preprocess(image)
         result = self.model.run(None, {self.input_name: image})
-        pred = result[0].reshape(size, size, 2)[:,:,1:2]
-        # pred = result[0].reshape(size, size)
+        # pred = result[0].reshape(size, size, 2)[:,:,1:2]
+        pred = result[0].reshape(size, size)
 
         # pred[pred < 0.05] == 0
         pred[pred >= 0.0] == 1
@@ -51,7 +51,7 @@ CORS(app)
 # Initialization
 paper_processor = PaperProcessor()
 hand_remover = HandRemover()
-stroke_filter = StrokeFilter()
+filter_image = FilterImage()
 
 @app.route('/')
 def index():
@@ -76,20 +76,9 @@ def handle_frame(data):
     # cv2.waitKey(1)
     is_cropped, processed_image, draw = paper_processor.get_paper_image(image, pred, draw=draw)
     processed_image = hand_remover.process(processed_image, is_cropped=is_cropped)
-
-
-    # enhancer = ImageEnhance.Contrast(Image.fromarray(processed_image.astype(np.uint8)*255))
-    #factor = 0.7
-    # processed_image = np.array(enhancer.enhance(factor))
-
-
     processed_image = filter.remove_shadow(processed_image)
-
-
-
-
-    # processed_image = filter.thresh_image(processed_image)
-    # # cv2.imshow('processed_image', processed_image)
+    # processed_image = filter_image.run(processed_image, hand_area)
+    # cv2.imshow('processed_image', processed_image)
     # cv2.waitKey(1)
 
 
@@ -98,7 +87,6 @@ def handle_frame(data):
     processed_encoded = base64.b64encode(jpeg.tobytes()).decode('utf-8')
     socketio.emit('processed_frame', processed_encoded)
     end = time.time()
-    # print((end-start) * 10**3, "ms")
     print(end-start)
 
 if __name__ == '__main__':

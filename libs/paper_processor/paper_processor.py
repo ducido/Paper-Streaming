@@ -6,7 +6,7 @@ from ..utils.common import *
 class PaperProcessor():
     points = []
     pred = None
-    size = 128
+    size = 144
     center = []
     biggest_list = []
 
@@ -43,7 +43,7 @@ class PaperProcessor():
         for cnt in contours:
             area = cv2.contourArea(cnt)
             # print('-----------------', area)
-            if area > 4500:
+            if area > 5000:
                 peri = cv2.arcLength(cnt, True)
                 approx = cv2.approxPolyDP(cnt, 0.02*peri, True)                   
                 if area > max_area and len(approx) in [4]:
@@ -87,7 +87,7 @@ class PaperProcessor():
         matrix = cv2.getPerspectiveTransform(pts1, pts2)
         imgOutput = cv2.warpPerspective(img, matrix, (img.shape[1], img.shape[0]))
 
-        a = 20
+        a = 40
         h = imgOutput.shape[0] - a
         w = imgOutput.shape[1] - a
         imgOutput = imgOutput[a:h, a:w]

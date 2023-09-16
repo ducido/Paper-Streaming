@@ -45,5 +45,5 @@ gunicorn
 gevent
 flask_socketio
 gevent-websocket
-onnxruntime
+onnxruntime-gpu
 flask-cors

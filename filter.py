@@ -1,13 +1,36 @@
 import cv2
 import numpy as np
+import time
 
-def thresh_image(image):
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+class FilterImage:
+    def __init__(self):
+        self.kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3, 3))
 
-    image = cv2.bilateralFilter(image,9,8,8)
-    th3 = cv2.adaptiveThreshold(image,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,45,2)
+    def run(self, image, hand_area):
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        copy = image.copy()
 
-    return th3
+        image = cv2.GaussianBlur(image, (7,7),0)
+
+        canny = cv2.Canny(image, 15,11)
+        canny = cv2.dilate(canny, self.kernel, iterations=10)
+
+        out = cv2.bitwise_and(copy, copy, mask= canny)
+
+        h = out.shape[0]
+        w = out.shape[1]
+        mask = np.zeros((h+2, w+2), np.uint8)
+
+        cv2.floodFill(out, mask, (5, 5), 255)
+        cv2.floodFill(out, mask, (w-5, 5), 255)
+        cv2.floodFill(out, mask, (w-20, h-20), 255)
+
+        cv2.floodFill(out, mask, (w//3, h-5), 255)
+        cv2.floodFill(out, mask, (w-w//3, h-5), 255)
+        cv2.floodFill(out, mask, (w//2, 2), 255)
+        cv2.floodFill(out, mask, (5, h - 5), 255)
+
+        return out
 
 
 def remove_shadow(img):
