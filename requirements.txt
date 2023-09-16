@@ -46,3 +46,4 @@ gevent
 flask_socketio
 gevent-websocket
 onnxruntime
+flask-cors
