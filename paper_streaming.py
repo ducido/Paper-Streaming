@@ -9,8 +9,8 @@ import threading
 
 import cv2
 import numpy as np
-from PyQt5 import QtWidgets, uic
-from PyQt5 import QtCore, QtGui
+# from PyQt5 import QtWidgets, uic
+# from PyQt5 import QtCore, QtGui
 
 import _thread
 from libs.config import *

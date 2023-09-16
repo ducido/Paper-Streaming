@@ -1,5 +1,6 @@
 from flask import Flask, request, render_template
 from flask_socketio import SocketIO
+from flask_cors import CORS
 import cv2
 import numpy as np
 from libs.config import *
@@ -44,6 +45,8 @@ model = paper_segment()
 Payload.max_decode_packets = 50
 app = Flask(__name__)
 socketio = SocketIO(app, async_mode='gevent')
+#allow all origin
+CORS(app)
 
 # Initialization
 paper_processor = PaperProcessor()

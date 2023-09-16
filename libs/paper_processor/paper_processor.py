@@ -76,9 +76,6 @@ class PaperProcessor():
             # biggest = np.round(biggest).astype('int').reshape(4,1,2)
             # self.biggest_list.append(biggest)
         
-        if draw is not None:
-            cv2.drawContours(draw, biggest, -1, (255,0,0), 10)
-            cv2.imshow('draw', draw)
 
         return biggest
 
