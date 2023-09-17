@@ -22,7 +22,7 @@ class HandRemover(object):
         
     def process(self, image, is_cropped):
         if is_cropped == False:
-            return image, image
+            return image
 
         if self.background is None:
             self.background = image
@@ -73,7 +73,7 @@ class HandRemover(object):
 
         # cv2.imshow('m', m*255)
         # print('--------', np.sum(m))
-        if np.sum(m) < 1000:
+        if np.sum(m) < 5000:
             m = np.zeros_like(m)
         
         return m, m_dilate
