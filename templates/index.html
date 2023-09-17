@@ -9,57 +9,16 @@
 </head>
 <body>
     <div class="container">
-        <button class="button is-info" v-if="room" @click="publish(true)">
-          Share Desktop
+        <button class="button " id="rotate-button">
+          Rotate screen
         </button>
-        <button class="button is-info" v-if="room" @click="displayFrontCamera">
-          Share Front Cam
+        <button class="button" id="record">
+            Record video
         </button>
-      </div>
-    <video id="video" width="540" height="480" autoplay></video>
-    <canvas id="canvas" width="540" height="480" style="display:none;"></canvas>
-    <img id="processed" width="540" height="480" src="" alt="Processed Video">
-
-    <script>
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const context = canvas.getContext('2d');
-        const processed = document.getElementById('processed');
-        const socket = io.connect('http://' + document.domain + ':' + location.port);
-
-        // navigator.mediaDevices.getUserMedia({ video: true })
-        //     .then(stream => {
-        //         video: {
-        //             facingMode: 'user'  // This specifies the front camera
-        //         };
-        //         setInterval(captureAndSendFrame, 100);  // Adjust interval as needed
-        //     });
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(stream => {
-                video.srcObject = stream;
-                setInterval(captureAndSendFrame, 100);  // Adjust interval as needed
-            });
-        
-        var startTime;
-
-        function captureAndSendFrame() {
-            video.style.transform = 'scaleX(-1)';
-
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const frame = canvas.toDataURL('image/jpeg');
-            socket.emit('video_frame', frame);
-
-    // Reset the video element's transformation after drawing
-        video.style.transform = 'scaleX(1)';
-
-        startTime = new Date();
-        }
-
-        socket.on('processed_frame', data => {
-            let endTime = new Date();
-            console.log(endTime - startTime + " ms")
-            processed.src = 'data:image/jpeg;base64,' + data;
-        });
-    </script>
+    </div>
+    <video id="video" width="640" height="480" autoplay></video>
+    <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+    <img id="processed" width="640" height="480" src="" alt="Processed Video">
 </body>
+<script src="../static/js/style.js"></script>
 </html>
