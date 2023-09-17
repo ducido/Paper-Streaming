@@ -21,12 +21,12 @@ import filter
 import onnxruntime
 
 OUTPUT_SIMULATED_CAMERA = False
-size = 128
+size = 144
 
 
 class paper_segment:
     def __init__(self):
-        self.model = onnxruntime.InferenceSession("pretrained/psp_0.99.onnx",providers=['CUDAExecutionProvider'])
+        self.model = onnxruntime.InferenceSession("pretrained/psp_0.98_only.onnx",providers=['CUDAExecutionProvider'])
         self.input_name = self.model.get_inputs()[0].name
         print(self.model.get_inputs()[0])
 
@@ -80,9 +80,9 @@ def processing_thread():
         cv2.waitKey(1)
         
         # post processing
-        processed_image = filter.thresh_image(processed_image)
-        # cv2.imshow(' filter', processed_image)
-        # cv2.waitKey(1)
+        processed_image = filter.remove_shadow(processed_image)
+        cv2.imshow(' filter', processed_image)
+        cv2.waitKey(1)
         e = time.time()
         # print(e-s)
 

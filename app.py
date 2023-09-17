@@ -76,6 +76,9 @@ def handle_frame(data):
     # cv2.waitKey(1)
     is_cropped, processed_image, draw = paper_processor.get_paper_image(image, pred, draw=draw)
     processed_image = hand_remover.process(processed_image, is_cropped=is_cropped)
+    # cv2.imshow('processed_image', processed_image)
+    # cv2.waitKey(1)
+
     processed_image = filter.remove_shadow(processed_image)
     # processed_image = filter_image.run(processed_image, hand_area)
     # cv2.imshow('processed_image', processed_image)
