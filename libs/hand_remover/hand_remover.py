@@ -34,6 +34,9 @@ class HandRemover(object):
         except:
             pass
 
+        # cv2.imshow('dilate', hand_dilate)
+        # cv2.waitKey(1)
+
 
         if hand_mask is not None:
             if np.sum(hand_mask) > 0:
@@ -55,6 +58,7 @@ class HandRemover(object):
         mask_YCbCr = cv2.inRange(YCbCr_image, self.lower_YCbCr_values, self.upper_YCbCr_values)
         mask_HSV = cv2.inRange(HSV_image, self.lower_HSV_values, self.upper_HSV_values)
 
+
         foreground_mask = cv2.add(mask_HSV, mask_YCbCr)
         # Morphological operations
         background_mask = ~foreground_mask
@@ -68,7 +72,11 @@ class HandRemover(object):
         m = cv2.convertScaleAbs(foreground_mask)
         m[m < 200] = 0
         m[m >= 200] = 1
-        m_dilate = cv2.dilate(m*255, self.kernel, iterations=10)
+
+        # cv2.imshow('m', mask_HSV)
+        # cv2.waitKey(1)
+
+        m_dilate = cv2.dilate(mask_HSV, self.kernel, iterations=1)
 
 
         # cv2.imshow('m', m*255)
