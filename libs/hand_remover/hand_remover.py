@@ -22,7 +22,7 @@ class HandRemover(object):
         
     def process(self, image, is_cropped):
         if is_cropped == False:
-            return image, image
+            return image
 
         if self.background is None:
             self.background = image
@@ -34,6 +34,8 @@ class HandRemover(object):
         except:
             pass
 
+        cv2.imshow('dilate', hand_dilate)
+        cv2.waitKey(1)
 
         if hand_mask is not None:
             if np.sum(hand_mask) > 0:
@@ -66,14 +68,14 @@ class HandRemover(object):
         cv2.watershed(image, marker)
 
         m = cv2.convertScaleAbs(foreground_mask)
-        m[m < 200] = 0
-        m[m >= 200] = 1
-        m_dilate = cv2.dilate(m*255, self.kernel, iterations=10)
+        m[m < 220] = 0
+        m[m >= 220] = 1
+        m_dilate = cv2.dilate(m*255, self.kernel, iterations=6)
 
 
         # cv2.imshow('m', m*255)
         # print('--------', np.sum(m))
-        if np.sum(m) < 1000:
+        if np.sum(m) < 5000:
             m = np.zeros_like(m)
         
         return m, m_dilate
