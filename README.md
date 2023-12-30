@@ -21,12 +21,17 @@ pip install -U pip setuptools
 python app.py
 ```
 ## Video demo sản phẩm
-https://github.com/ducido/Paper-Streaming/assets/122498122/772fda5f-80b8-42b7-8666-8b535e505b1a
+<img src="https://github.com/ducido/Paper-Streaming/assets/122498122/772fda5f-80b8-42b7-8666-8b535e505b1a" width="100">
+
 
 
 
 
 https://github.com/ducido/Paper-Streaming/assets/122498122/58c1f2bc-6376-4e77-9408-dda913093a47
+
+
+
+https://github.com/ducido/Paper-Streaming/assets/122498122/a1674604-a5a6-4b69-9b7d-beb0265afd27
 
 
 ## Note
