@@ -1,5 +1,5 @@
 # Technology solution for education
-# We got consolation prize at Coding Inspirarion 2023
+## We got consolation prize at Coding Inspirarion 2023
 
 ## The original: https://github.com/vietanhdev/paper_stream
 Our new contribution and method:
@@ -21,7 +21,8 @@ pip install -U pip setuptools
 python app.py
 ```
 ## Video demo sản phẩm
-        https://github.com/ducido/paper_stream/assets/122734511/087f89d4-696f-45a9-8c22-21976c3cb5ad
+https://github.com/ducido/Paper-Streaming/video_demo/demo1_mp4
+
 
 ## Note
 ```
