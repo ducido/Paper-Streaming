@@ -6,7 +6,6 @@ from threading import Thread, Lock
 import time
 
 class HandRemover(object):
-
     def __init__(self):
         self.lower_HSV_values = np.array([0, 40, 0], dtype="uint8")
         self.upper_HSV_values = np.array([25, 255, 255], dtype="uint8")
@@ -14,7 +13,7 @@ class HandRemover(object):
         self.lower_YCbCr_values = np.array((0, 138, 67), dtype = "uint8")
         self.upper_YCbCr_values = np.array((255, 173, 133), dtype = "uint8")
 
-        self.kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5, 5))
+        self.kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3, 3))
 
         self.background = None
         self.image_list = []
@@ -31,13 +30,8 @@ class HandRemover(object):
         hand_mask = None
         try:
             hand_mask, hand_dilate = self.__get_hand_mask(image)
-        except:
-            pass
-
-        # cv2.imshow('dilate', hand_dilate)
-        # cv2.waitKey(1)
-
-
+        except: pass
+            
         if hand_mask is not None:
             if np.sum(hand_mask) > 0:
                 self.image_list.pop(-1)
@@ -72,15 +66,9 @@ class HandRemover(object):
         m = cv2.convertScaleAbs(foreground_mask)
         m[m < 200] = 0
         m[m >= 200] = 1
-
-        # cv2.imshow('m', mask_HSV)
-        # cv2.waitKey(1)
-
+        
         m_dilate = cv2.dilate(mask_HSV, self.kernel, iterations=1)
 
-
-        # cv2.imshow('m', m*255)
-        # print('--------', np.sum(m))
         if np.sum(m) < 5000:
             m = np.zeros_like(m)
         
