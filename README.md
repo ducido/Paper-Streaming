@@ -21,7 +21,7 @@ pip install -U pip setuptools
 python app.py
 ```
 ## Video demo sản phẩm
-https://github.com/ducido/Paper-Streaming/video_demo/demo1_mp4
+https://github.com/ducido/Paper-Streaming/video_demo/demo1.mp4
 
 
 ## Note
