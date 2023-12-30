@@ -24,6 +24,11 @@ python app.py
 https://github.com/ducido/Paper-Streaming/assets/122498122/772fda5f-80b8-42b7-8666-8b535e505b1a
 
 
+
+
+https://github.com/ducido/Paper-Streaming/assets/122498122/58c1f2bc-6376-4e77-9408-dda913093a47
+
+
 ## Note
 ```
 ứng dụng chạy trên localhost tại port 5000 (localhost:5000)
