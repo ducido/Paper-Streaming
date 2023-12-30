@@ -55,7 +55,6 @@ function stopRecording() {
 
 
 
-
 function rotate() {
    currentRotation += 90;
    video.style.transform = `rotate(${currentRotation}deg)`;

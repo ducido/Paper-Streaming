@@ -10,7 +10,6 @@ import onnxruntime
 
 size = 144
 
-
 class paper_segment:
     def __init__(self):
         self.model = onnxruntime.InferenceSession("pretrained/model.onnx",providers=['CUDAExecutionProvider'])
