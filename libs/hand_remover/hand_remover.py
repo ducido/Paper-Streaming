@@ -23,7 +23,6 @@ class HandRemover(object):
     def process(self, image, is_cropped):
         if is_cropped == False:
             return image
-            return image
 
         if self.background is None:
             self.background = image
