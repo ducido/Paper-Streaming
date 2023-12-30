@@ -63,9 +63,9 @@ class HandRemover(object):
         marker = np.int32(marker)
         cv2.watershed(image, marker)
 
-        m = cv2.convertScaleAbs(foreground_mask)
-        m[m < 200] = 0
+        m = cv2.convertScaleAbs(foreground_mask) 
         m[m >= 200] = 1
+        m[m < 200] = 0
         
         m_dilate = cv2.dilate(mask_HSV, self.kernel, iterations=1)
 
