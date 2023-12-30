@@ -1,19 +1,15 @@
 from flask import Flask, request, render_template
 from flask_socketio import SocketIO
 from flask_cors import CORS
+
 import cv2
 import numpy as np
-from libs.config import *
-import os, sys
-sys.path.append("/home/saplab/Documents/paper_stream/libs")
+
 from libs.hand_remover.hand_remover import HandRemover
 from libs.paper_processor.paper_processor import PaperProcessor
-from filter import FilterImage
-import filter
+import libs.filter as filter
 import base64
 from engineio.payload import Payload
-from PIL import Image, ImageEnhance
-# from gevent import monkey
 import onnxruntime
 # Delete later
 import time
@@ -21,7 +17,7 @@ import time
 size= 144
 class paper_segment:
     def __init__(self):
-        self.model = onnxruntime.InferenceSession("pretrained/psp_0.98_only.onnx",providers=['CUDAExecutionProvider'])
+        self.model = onnxruntime.InferenceSession("pretrained/model.onnx",providers=['CUDAExecutionProvider'])
         self.input_name = self.model.get_inputs()[0].name
         print(self.model.get_inputs()[0])
 
@@ -40,7 +36,6 @@ class paper_segment:
         pred[pred >= 0.0] == 1
         return pred
 model = paper_segment()
-# monkey.patch_all()
 
 Payload.max_decode_packets = 50
 app = Flask(__name__)
@@ -51,7 +46,6 @@ CORS(app)
 # Initialization
 paper_processor = PaperProcessor()
 hand_remover = HandRemover()
-filter_image = FilterImage()
 
 @app.route('/')
 def index():
@@ -66,24 +60,14 @@ def handle_frame(data):
 
     # Process the frame
     image = frame.copy()
-    # image = cv2.transpose(image)
     image = cv2.flip(image, 0)
     image = cv2.flip(image, 1)
     draw = image.copy()
-    # processed_image = image.copy()
+
     pred = model.predict(image)
-    # cv2.imshow('pred', pred)
-    # cv2.waitKey(1)
     is_cropped, processed_image, draw = paper_processor.get_paper_image(image, pred, draw=draw)
     processed_image = hand_remover.process(processed_image, is_cropped=is_cropped)
-    # cv2.imshow('processed_image', processed_image)
-    # cv2.waitKey(1)
-
     processed_image = filter.remove_shadow(processed_image)
-    # processed_image = filter_image.run(processed_image, hand_area)
-    # cv2.imshow('processed_image', processed_image)
-    # cv2.waitKey(1)
-
 
     # Convert the processed image to base64 and send it back to the client
     ret, jpeg = cv2.imencode('.jpg', processed_image)
